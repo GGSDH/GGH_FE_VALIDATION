@@ -1,30 +1,31 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:ggh_fe_valdation/extension/partition.dart';
 import 'package:intl/intl.dart';
 
-class RangePicker extends StatefulWidget {
-  const RangePicker({super.key, required this.now});
+class RangePicker extends StatelessWidget {
+  const RangePicker({
+    super.key,
+    required this.now,
+    required this.startDate,
+    required this.endDate,
+    required this.onDaySelected,
+  });
 
   final DateTime now;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final void Function(DateTime) onDaySelected;
 
-  @override
-  State<RangePicker> createState() => _RangePickerState();
-}
-
-class _RangePickerState extends State<RangePicker> {
   @override
   Widget build(BuildContext context) {
-    final now = widget.now;
-
     final days = _getMonthDays(now);
     final weeks = days.partition(7).toList();
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 24,
-          vertical: 10
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -32,10 +33,10 @@ class _RangePickerState extends State<RangePicker> {
             const WeekHeader(),
             ...weeks.map((week) => Week(
               weekDays: week,
-              onDaySelected: (day) {
-                print(day);
-              }
-            ))
+              onDaySelected: onDaySelected,
+              startDate: startDate,
+              endDate: endDate,
+            )),
           ],
         ),
       ),
@@ -44,7 +45,6 @@ class _RangePickerState extends State<RangePicker> {
 
   List<DateTime> _getMonthDays(DateTime date) {
     final lastDay = DateTime(date.year, date.month + 1, 0);
-
     return List.generate(lastDay.day, (index) => DateTime(date.year, date.month, index + 1));
   }
 }
@@ -55,7 +55,7 @@ class YearMonthHeader extends StatelessWidget {
     required this.currentDate
   });
 
-  final currentDate;
+  final DateTime currentDate;
 
   @override
   Widget build(BuildContext context) {
@@ -71,18 +71,32 @@ class WeekHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weekdays = ['일', '월', '화', '수', '목', '금',' 토'];
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       mainAxisSize: MainAxisSize.max,
-      children: List.generate(7, (index) {
-        final day = DateTime.now().subtract(Duration(days: 6 - index));
-        return Container(
-          alignment: Alignment.center,
-          width: 50,
-          height: 48,
-          child: Text(DateFormat.E().format(day))
+      children: weekdays.map((day) {
+        final textColor = day == '일'
+            ? Colors.red
+            : day == "토"
+              ? Colors.blue
+              : Colors.black;
+
+        return Expanded(
+          flex: 1,
+          child: Container(
+            alignment: Alignment.center,
+            height: 48,
+            child: Text(
+              day,
+              style: TextStyle(
+                color: textColor
+              )
+            )
+          ),
         );
-      }),
+      }).toList()
     );
   }
 }
@@ -90,31 +104,36 @@ class WeekHeader extends StatelessWidget {
 class Week extends StatelessWidget {
   final List<DateTime> weekDays;
   final Function(DateTime) onDaySelected;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   const Week({
     super.key,
     required this.weekDays,
-    required this.onDaySelected
+    required this.onDaySelected,
+    required this.startDate,
+    required this.endDate
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      mainAxisSize: MainAxisSize.max,
       children: List.generate(7, (index) {
         if (index < weekDays.length) {
           final day = weekDays[index];
-          return Container(
-              alignment: Alignment.center,
-              width: 50,
-              height: 48,
-              child: Day(day: day, onDaySelected: onDaySelected)
+          return Day(
+              day: day,
+              onDaySelected: onDaySelected,
+              startDate: startDate,
+              endDate: endDate
           );
         } else {
-          return const SizedBox(
-            width: 50,
-            height: 48,
+          return const Expanded(
+            flex: 1,
+            child: SizedBox(
+              height: 48
+            )
           );
         }
       }),
@@ -125,22 +144,70 @@ class Week extends StatelessWidget {
 class Day extends StatelessWidget {
   final DateTime day;
   final Function(DateTime) onDaySelected;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   const Day({
     super.key,
     required this.day,
-    required this.onDaySelected
+    required this.onDaySelected,
+    required this.startDate,
+    required this.endDate
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(4),
+    log('startDate: $startDate');
+    log('endDate: $endDate');
+
+    bool isSelected = startDate != null &&
+        endDate != null &&
+        day.isAfter(startDate!.subtract(const Duration(hours: 6))) &&
+        day.isBefore(endDate!.add(const Duration(hours: 6)));
+
+    bool isStartDay = startDate != null &&
+        startDate!.year == day.year &&
+        startDate!.month == day.month &&
+        startDate!.day == day.day;
+    bool isEndDay = endDate != null &&
+        endDate!.year == day.year &&
+        endDate!.month == day.month &&
+        endDate!.day == day.day;
+
+    log('isStartDay: $isStartDay');
+    log('isEndDay: $isEndDay');
+
+    final borderRadius = BorderRadius.only(
+      topLeft: isStartDay ? const Radius.circular(30) : Radius.zero,
+      bottomLeft: isStartDay ? const Radius.circular(30) : Radius.zero,
+      topRight: isEndDay ? const Radius.circular(30) : Radius.zero,
+      bottomRight: isEndDay ? const Radius.circular(30) : Radius.zero,
+    );
+
+    return Expanded(
+      flex: 1,
+      child: GestureDetector(
+        onTap: () => onDaySelected(day),
+        child: Container(
+        height: 48,
+          padding: const EdgeInsets.symmetric(vertical: 3.5),
+          alignment: Alignment.center,
+          child: Container(
+            constraints: const BoxConstraints.expand(),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+            ),
+            child: Text(
+              day.day.toString(),
+              style: TextStyle(
+                color: isSelected ? Colors.blue : Colors.black
+              )
+            ),
+          ),
+        ),
       ),
-      child: Text(day.day.toString()),
     );
   }
 }
