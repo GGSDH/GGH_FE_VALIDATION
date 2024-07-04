@@ -21,7 +21,7 @@ class RangePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final days = _getMonthDays(now);
-    final weeks = days.partition(7).toList();
+    final weeks = getNumberOfWeeksInMonth(now);
 
     return SingleChildScrollView(
       child: Padding(
@@ -41,6 +41,33 @@ class RangePicker extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<List<DateTime?>> getNumberOfWeeksInMonth(DateTime date) {
+    final firstDayOfMonth = DateTime(date.year, date.month, 1);
+    final lastDayOfMonth = DateTime(date.year, date.month + 1, 0);
+
+    List<DateTime?> days = [];
+    int daysInMonth = lastDayOfMonth.day;
+
+    for (int i = 0; i < firstDayOfMonth.weekday - 1; i++) {
+      days.add(null);
+    }
+
+    for (int i = 1; i <= daysInMonth; i++) {
+      days.add(DateTime(date.year, date.month, i));
+    }
+
+    while (days.length % 7 != 0) {
+      days.add(null);
+    }
+
+    List<List<DateTime?>> weeks = [];
+    for (int i = 0; i < days.length; i += 7) {
+      weeks.add(days.sublist(i, i + 7));
+    }
+
+    return weeks;
   }
 
   List<DateTime> _getMonthDays(DateTime date) {
@@ -102,7 +129,7 @@ class WeekHeader extends StatelessWidget {
 }
 
 class Week extends StatelessWidget {
-  final List<DateTime> weekDays;
+  final List<DateTime?> weekDays;
   final Function(DateTime) onDaySelected;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -117,26 +144,24 @@ class Week extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(7, (index) {
-        if (index < weekDays.length) {
-          final day = weekDays[index];
-          return Day(
-              day: day,
-              onDaySelected: onDaySelected,
-              startDate: startDate,
-              endDate: endDate
+      children: weekDays.map((day) {
+        if (day == null) {
+          return const Expanded(
+              flex: 1,
+              child: SizedBox(height: 48)
           );
         } else {
-          return const Expanded(
-            flex: 1,
-            child: SizedBox(
-              height: 48
-            )
+          return Day(
+            day: day,
+            onDaySelected: onDaySelected,
+            startDate: startDate,
+            endDate: endDate,
           );
         }
-      }),
+      }).toList(),
     );
   }
 }
