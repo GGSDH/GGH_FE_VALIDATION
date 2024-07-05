@@ -515,26 +515,49 @@ class _MyHomePageState extends State<MyHomePage> {
     return {
       'dateTime': dateTime,
       'address': address,
+      'latitude': latitude,
+      'longitude': longitude
     };
   }
 
   double? parseGpsCoordinate(IfdTag? tag) {
     if (tag == null) return null;
-    // Try extracting GPS information in a more controlled manner
     try {
-      List<double> coordinates = tag.printable.split(',').map((str) {
-        return double.tryParse(str.trim()) ?? 0.0;
-      }).toList();
-      if (coordinates.length == 3) {
-        var degrees = coordinates[0];
-        var minutes = coordinates[1];
-        var seconds = coordinates[2];
-        return degrees + (minutes / 60) + (seconds / 3600);
+      String data = tag.printable;
+      if (data.startsWith('[') && data.endsWith(']')) {
+        data = data.substring(1, data.length - 1);
       }
+
+      List<String> parts = data.split(',');
+      if (parts.length != 3) {
+        throw const FormatException(
+            "Expected exactly three components for GPS data");
+      }
+
+      double degrees = double.parse(parts[0].trim());
+      double minutes = double.parse(parts[1].trim());
+      double seconds = parseFractionalSeconds(parts[2].trim());
+
+      // Calculating the decimal degree representation
+      return degrees + (minutes / 60) + (seconds / 3600);
     } catch (e) {
       print('Error parsing GPS data: $e');
+      return null;
     }
-    return null;
+  }
+
+  double parseFractionalSeconds(String fractional) {
+    if (fractional.contains('/')) {
+      var splitFraction = fractional.split('/');
+      if (splitFraction.length == 2) {
+        double numerator = double.parse(splitFraction[0].trim());
+        double denominator = double.parse(splitFraction[1].trim());
+        return numerator / denominator;
+      } else {
+        throw const FormatException("Invalid format for fractional seconds");
+      }
+    }
+    return double.parse(fractional);
   }
 
 // 이미지 파일 리스트를 날짜와 위치 정보를 기준으로 분류하여 표시
@@ -573,7 +596,8 @@ class _MyHomePageState extends State<MyHomePage> {
     if (fileList != null) {
       for (var file in fileList) {
         final metadata = await getImageMetadata(file);
-        final key = "${metadata['dateTime']} - ${metadata['address']}";
+        final key =
+            "${metadata['dateTime']} - ${metadata['address']} - ${metadata['latitude']}, ${metadata['longitude']}";
         if (!sortedMap.containsKey(key)) {
           sortedMap[key] = [];
         }
