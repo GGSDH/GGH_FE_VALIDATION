@@ -509,7 +509,9 @@ class _MyHomePageState extends State<MyHomePage> {
     String? address;
     if (latitude != null && longitude != null) {
       final placemarks = await placemarkFromCoordinates(latitude, longitude);
-      address = placemarks.first.name;
+      Placemark place = placemarks[0];
+      address = '${place.street}, ${place.subLocality}, ${place.locality}, '
+          '${place.administrativeArea}, ${place.postalCode}, ${place.country}';
     }
 
     return {

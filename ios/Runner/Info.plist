@@ -45,8 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Need to access your photo library</string>
+
+	<!-- Permission options for the `photos` group -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>photos</string>
+
 	<key>NSCameraUsageDescription</key>
 	<string>Need to access your camera</string>
 	<key>NSMicrophoneUsageDescription</key>
