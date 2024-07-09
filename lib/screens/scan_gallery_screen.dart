@@ -47,7 +47,8 @@ double? parseGpsCoordinate(dynamic coordinate) {
 Future<List<XFile>> scanPhotos(Function(double) updateProgress) async {
   await requestPermissions();
 
-  List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(type: RequestType.image);
+  List<AssetPathEntity> albums =
+      await PhotoManager.getAssetPathList(type: RequestType.image);
   List<XFile> photos = [];
   int totalPhotos = 0;
 
@@ -63,9 +64,14 @@ Future<List<XFile>> scanPhotos(Function(double) updateProgress) async {
       int batchSize = 100; // Adjust the batch size as needed
       for (int i = 0; i < albumCount; i += batchSize) {
         int end = (i + batchSize > albumCount) ? albumCount : i + batchSize;
-        List<AssetEntity> albumPhotos = await album.getAssetListRange(start: i, end: end);
+        List<AssetEntity> albumPhotos =
+            await album.getAssetListRange(start: i, end: end);
         for (var asset in albumPhotos) {
           File? file = await asset.file;
+
+          LatLng latLng = await asset.latlngAsync();
+          log('latitude: ${latLng.latitude}, longitude: ${latLng.longitude}, datetime: ${asset.createDateTime}');
+
           if (file != null) {
             photos.add(XFile(file.path));
           }
@@ -79,12 +85,15 @@ Future<List<XFile>> scanPhotos(Function(double) updateProgress) async {
   return photos;
 }
 
-Future<Map<String, List<XFile>>> sortImagesByDateAndLocation(List<XFile>? fileList) async {
+Future<Map<String, List<XFile>>> sortImagesByDateAndLocation(
+    List<XFile>? fileList) async {
   Map<String, List<XFile>> sortedMap = {};
   if (fileList != null) {
     for (var file in fileList) {
       final metadata = await getImageMetadata(file);
-      final key = "${metadata['dateTime']} - ${metadata['address']} - ${metadata['latitude']}, ${metadata['longitude']}";
+
+      final key =
+          "${metadata['dateTime']} - ${metadata['address']} - ${metadata['latitude']}, ${metadata['longitude']}";
 
       if (!sortedMap.containsKey(key)) {
         sortedMap[key] = [];
@@ -114,7 +123,8 @@ class _ScanGalleryScreenState extends State<ScanGalleryScreen> {
     });
 
     List<XFile> photos = await scanPhotos(updateProgress);
-    Map<String, List<XFile>> sortedPhotos = await sortImagesByDateAndLocation(photos);
+    Map<String, List<XFile>> sortedPhotos =
+        await sortImagesByDateAndLocation(photos);
 
     setState(() {
       _sortedPhotos = sortedPhotos;
@@ -139,24 +149,24 @@ class _ScanGalleryScreenState extends State<ScanGalleryScreen> {
           ),
           _isLoading
               ? Column(
-            children: [
-              CircularProgressIndicator(value: _progress),
-              const SizedBox(height: 10),
-              Text('${(_progress * 100).toStringAsFixed(1)}%'),
-            ],
-          )
+                  children: [
+                    CircularProgressIndicator(value: _progress),
+                    const SizedBox(height: 10),
+                    Text('${(_progress * 100).toStringAsFixed(1)}%'),
+                  ],
+                )
               : Expanded(
-            child: ListView.builder(
-              itemCount: _sortedPhotos.keys.length,
-              itemBuilder: (context, index) {
-                String key = _sortedPhotos.keys.elementAt(index);
-                return ScanGalleryItem(
-                  locationKey: key,
-                  photos: _sortedPhotos[key]!,
-                );
-              },
-            ),
-          ),
+                  child: ListView.builder(
+                    itemCount: _sortedPhotos.keys.length,
+                    itemBuilder: (context, index) {
+                      String key = _sortedPhotos.keys.elementAt(index);
+                      return ScanGalleryItem(
+                        locationKey: key,
+                        photos: _sortedPhotos[key]!,
+                      );
+                    },
+                  ),
+                ),
         ],
       ),
     );
@@ -167,7 +177,8 @@ class ScanGalleryItem extends StatelessWidget {
   final String locationKey;
   final List<XFile> photos;
 
-  const ScanGalleryItem({super.key, required this.locationKey, required this.photos});
+  const ScanGalleryItem(
+      {super.key, required this.locationKey, required this.photos});
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +190,8 @@ class ScanGalleryItem extends StatelessWidget {
         SizedBox(
           height: 200, // Adjust the height as needed
           child: ListView.builder(
-            scrollDirection: Axis.horizontal, // Make it horizontal to avoid nested vertical scrolling
+            scrollDirection: Axis
+                .horizontal, // Make it horizontal to avoid nested vertical scrolling
             itemCount: photos.length,
             itemBuilder: (context, index) {
               return Padding(
