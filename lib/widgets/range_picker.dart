@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:ggh_fe_valdation/extension/partition.dart';
 import 'package:intl/intl.dart';
 
 class RangePicker extends StatelessWidget {
@@ -20,7 +19,6 @@ class RangePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final days = _getMonthDays(now);
     final weeks = getNumberOfWeeksInMonth(now);
 
     return SingleChildScrollView(
@@ -68,11 +66,6 @@ class RangePicker extends StatelessWidget {
     }
 
     return weeks;
-  }
-
-  List<DateTime> _getMonthDays(DateTime date) {
-    final lastDay = DateTime(date.year, date.month + 1, 0);
-    return List.generate(lastDay.day, (index) => DateTime(date.year, date.month, index + 1));
   }
 }
 

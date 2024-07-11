@@ -1,50 +1,54 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import '../widgets/range_picker.dart';
 
 class RangePickerScreen extends StatelessWidget {
-  const RangePickerScreen({super.key});
+  const RangePickerScreen({
+    super.key,
+    required this.startDate,
+    required this.endDate,
+    required this.onDaySelected,
+  });
+
+  final DateTime startDate;
+  final DateTime endDate;
+  final void Function(DateTime) onDaySelected;
 
   @override
   Widget build(BuildContext context) {
-    return const YearRangePicker();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Date Range'),
+      ),
+      body: YearRangePicker(
+        startDate: startDate,
+        endDate: endDate,
+        onDaySelected: onDaySelected,
+      ),
+    );
   }
 }
 
 class YearRangePicker extends StatefulWidget {
-  const YearRangePicker({super.key});
+  const YearRangePicker({
+    super.key,
+    required this.startDate,
+    required this.endDate,
+    required this.onDaySelected,
+  });
+
+  final DateTime startDate;
+  final DateTime endDate;
+  final void Function(DateTime) onDaySelected;
 
   @override
-  State<YearRangePicker> createState() => _YearRangePickerState();
+  State<StatefulWidget> createState() => _YearRangePickerState();
 }
 
 class _YearRangePickerState extends State<YearRangePicker> {
-  late DateTime startDate;
-  late DateTime endDate;
 
   @override
   void initState() {
     super.initState();
-    startDate = DateTime.now();
-    endDate = DateTime.now();
-  }
-
-  void _onDaySelected(DateTime selectedDay) {
-    setState(() {
-      log('selectedDay: $selectedDay');
-      if (startDate.isBefore(endDate)) {
-        startDate = selectedDay;
-        endDate = selectedDay;
-      } else if (selectedDay.isBefore(startDate)) {
-        startDate = selectedDay;
-      } else if (selectedDay.isAfter(endDate)) {
-        endDate = selectedDay;
-      } else {
-        startDate = selectedDay;
-        endDate = selectedDay;
-      }
-    });
   }
 
   @override
@@ -58,9 +62,9 @@ class _YearRangePickerState extends State<YearRangePicker> {
 
         return RangePicker(
           now: targetDate,
-          startDate: startDate,
-          endDate: endDate,
-          onDaySelected: _onDaySelected,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          onDaySelected: widget.onDaySelected,
         );
       },
     );
